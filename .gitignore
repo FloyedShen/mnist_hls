@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# User
+MNIST_DATA/*
+LeNet_hls/*
+*.log
+*.jou
