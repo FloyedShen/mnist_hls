@@ -14,4 +14,4 @@ float relu(float x);
 
 
 
-#endif /* SRC_LENET5_HW_LAYERS_ACTIVATION_H_ */
+#endif
