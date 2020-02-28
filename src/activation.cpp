@@ -1,5 +1,5 @@
 /*
- * activation.h
+ * activation.cpp
  *
  *  Created on: 2020. 2. 27.
  *      Author: floyed

@@ -1,3 +1,9 @@
+/*
+ * fullyconnected.cpp
+ *
+ *  Created on: 2020. 2. 27.
+ *      Author: floyed
+ */
 #include "fullyconnected.h"
 
 void Fully_Connected_Layer_1(float* input_feature, float* weights, float* bias, float* output_feature){

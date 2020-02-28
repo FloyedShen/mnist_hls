@@ -1,10 +1,9 @@
 /*
  * activation.h
  *
- *  Created on: 2017. 7. 12.
- *      Author: woobes
+ *  Created on: 2020. 2. 27.
+ *      Author: floyed
  */
-
 #ifndef SRC_LENET5_HW_LAYERS_ACTIVATION_H_
 #define SRC_LENET5_HW_LAYERS_ACTIVATION_H_
 
