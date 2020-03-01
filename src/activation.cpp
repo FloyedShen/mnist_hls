@@ -5,15 +5,18 @@
  *      Author: floyed
  */
 #include "activation.h"
-
-float _tanh(float x){
+//#include "iostream"
+//using namespace std;
+hw_fixed _tanh(hw_fixed x){
 #pragma HLS INLINE
-	float exp2x = expf(2*x)+1;
-	return (exp2x-2)/(exp2x);
+	float exp2x = expf(2*(float)x)+1;
+	//cout <<x<<' '<<exp2x<<' '<<(hw_fixed)((exp2x-2)/(exp2x))<<endl;
+	return (hw_fixed)((exp2x-2)/(exp2x));
 }
 
-float relu(float x){
+hw_fixed relu(hw_fixed x){
 #pragma HLS inline
-	return x>0 ? x : 0;
+	if(x>0) return x;
+	else return 0;
 }
 

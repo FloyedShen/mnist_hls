@@ -8,10 +8,10 @@
 #define SRC_LENET5_HW_LAYERS_ACTIVATION_H_
 
 #include "parameters.h"
-float _tanh(float x);
-float relu(float x);
+hw_fixed _tanh(hw_fixed x);
+hw_fixed relu(hw_fixed x);
 
 
 
 
-#endif
+#endif /* SRC_LENET5_HW_LAYERS_ACTIVATION_H_ */

@@ -10,34 +10,37 @@
 #include "ap_fixed.h"
 using namespace std;
 
-void load_model(int *src, float *dst, int length){
+void load_model(ap_int<HW_DATA_WIDTH> *src, hw_fixed *dst, int length){
 	for(int i=0; i<length; i++){
-		dst[i] = src[i]*1.0 / 1000000;//((float*)src)[i];
+//#pragma HLS pipeline
+		dst[i] = ((float)src[i])/DATA_CONVERT_MUL;//((float*)src)[i];
 	}
 	return;
 }
 
-void load_img(int *src, float *img){
+void load_img(ap_int<HW_DATA_WIDTH> *src, hw_fixed *img){
 	for(int i=0; i<image_Batch*INPUT_WH*INPUT_WH; i++){
-		img[i] = src[i]*1.0 / 1000000;//((float*)src)[i];
+//#pragma HLS pipeline
+		img[i] = ((float)src[i])/DATA_CONVERT_MUL;//((float*)src)[i];
 		//if(img[i] != -1)
-			//cout << img[i] << ' ';
+		//cout <<src[i].data<<' '<< img[i] << endl;
 	}//cout<<endl;
 	return;
 }
-
-void debug(float *data, int length, string name){
-	cout << name << endl;
+#ifndef __SYNTHESIS__
+void debug(hw_fixed *data, int length, string name){
+	//cout << name << endl;
 	for(int i=0; i<length; i++)
 		cout << data[i] << ' ';
 	cout << endl;
 }
+#endif
 
-void LeNet(ap_axis<32,1,1,1>src[BUFFER_SIZE], ap_axis<32,1,1,1>dst[CLASSES], int id){
+void LeNet(ap_axis<HW_DATA_WIDTH,1,1,1>src[BUFFER_SIZE], ap_axis<HW_DATA_WIDTH,1,1,1>dst[CLASSES], int id){
 
-	int data[BUFFER_SIZE];
+	ap_int<HW_DATA_WIDTH> data[BUFFER_SIZE];
 	for(int i=0; i<BUFFER_SIZE; i++){
-#pragma HLS UNROLL
+//#pragma HLS pipeline
 		data[i] = src[i].data;
 	}
 
@@ -45,24 +48,24 @@ void LeNet(ap_axis<32,1,1,1>src[BUFFER_SIZE], ap_axis<32,1,1,1>dst[CLASSES], int
 	static int init = 1;
 
 	//conv layer weight & bias
-	static float Wconv1[CONV_1_TYPE*CONV_1_SIZE];
-	static float Bconv1[CONV_1_TYPE];
-	static float Wconv2[CONV_2_TYPE*CONV_1_TYPE*CONV_2_SIZE]; //spc
-	static float Bconv2[CONV_2_TYPE];
-	static float Wconv3[CONV_3_TYPE*CONV_2_TYPE*CONV_3_SIZE]; //spc
-	static float Bconv3[CONV_3_TYPE];
+	static hw_fixed Wconv1[CONV_1_TYPE*CONV_1_SIZE];
+	static hw_fixed Bconv1[CONV_1_TYPE];
+	static hw_fixed Wconv2[CONV_2_TYPE*CONV_1_TYPE*CONV_2_SIZE]; //spc
+	static hw_fixed Bconv2[CONV_2_TYPE];
+	static hw_fixed Wconv3[CONV_3_TYPE*CONV_2_TYPE*CONV_3_SIZE]; //spc
+	static hw_fixed Bconv3[CONV_3_TYPE];
 
 	//pool layer weight & bias
-	static float Wpool1[POOL_1_TYPE*4];
-	static float Bpool1[POOL_1_TYPE];
-	static float Wpool2[POOL_2_TYPE*4];
-	static float Bpool2[POOL_2_TYPE];
+	static hw_fixed Wpool1[POOL_1_TYPE*4];
+	static hw_fixed Bpool1[POOL_1_TYPE];
+	static hw_fixed Wpool2[POOL_2_TYPE*4];
+	static hw_fixed Bpool2[POOL_2_TYPE];
 
 	//fc layer weight & bias
-	static float Wfc1[FILTER_NN_1_SIZE];
-	static float Bfc1[BIAS_NN_1_SIZE];
-	static float Wfc2[FILTER_NN_2_SIZE];
-	static float Bfc2[BIAS_NN_2_SIZE];
+	static hw_fixed Wfc1[FILTER_NN_1_SIZE];
+	static hw_fixed Bfc1[BIAS_NN_1_SIZE];
+	static hw_fixed Wfc2[FILTER_NN_2_SIZE];
+	static hw_fixed Bfc2[BIAS_NN_2_SIZE];
 
 	//load_model
 	switch(id){
@@ -417,26 +420,33 @@ void LeNet(ap_axis<32,1,1,1>src[BUFFER_SIZE], ap_axis<32,1,1,1>dst[CLASSES], int
 		return;
 
 	//create layer
-	float input[image_Batch*INPUT_WH*INPUT_WH];
-	float conv1[image_Batch*CONV_1_TYPE*CONV_1_OUTPUT_SIZE];
-	float pool1[image_Batch*CONV_1_TYPE*POOL_1_OUTPUT_SIZE];
-	float conv2[image_Batch*CONV_2_TYPE*CONV_2_OUTPUT_SIZE];
-	float pool2[image_Batch*CONV_2_TYPE*CONV_2_OUTPUT_SIZE];
-	float conv3[image_Batch*CONV_3_TYPE*CONV_3_OUTPUT_SIZE];
-	float fc1[image_Batch*OUTPUT_NN_1_SIZE];
-	float output[image_Batch*OUTPUT_NN_2_SIZE];
+	hw_fixed input[image_Batch*INPUT_WH*INPUT_WH];
+	hw_fixed conv1[image_Batch*CONV_1_TYPE*CONV_1_OUTPUT_SIZE];
+	hw_fixed pool1[image_Batch*CONV_1_TYPE*POOL_1_OUTPUT_SIZE];
+	hw_fixed conv2[image_Batch*CONV_2_TYPE*CONV_2_OUTPUT_SIZE];
+	hw_fixed pool2[image_Batch*CONV_2_TYPE*CONV_2_OUTPUT_SIZE];
+	hw_fixed conv3[image_Batch*CONV_3_TYPE*CONV_3_OUTPUT_SIZE];
+	hw_fixed fc1[image_Batch*OUTPUT_NN_1_SIZE];
+	hw_fixed output[image_Batch*OUTPUT_NN_2_SIZE];
 
 	//load_image
 	load_img(data, input);
-
+	//cout<<"loaded image"<<endl;
 	//calc
 	Convolution_Layer_1(input, Wconv1, Bconv1, conv1, init);
+	//cout<<"conv1"<<endl;
 	Pooling_Layer_1(conv1, Wpool1, Bpool1, pool1);
+	//cout<<"pool1"<<endl;
 	Convolution_Layer_2(pool1, Wconv2, Bconv2, conv2, init);
+	//cout<<"conv2"<<endl;
 	Pooling_Layer_2(conv2, Wpool2, Bpool2, pool2);
+	//cout<<"pool2"<<endl;
 	Convolution_Layer_3(pool2, Wconv3, Bconv3, conv3, init);
+	//cout<<"conv3"<<endl;
 	Fully_Connected_Layer_1(conv3, Wfc1, Bfc1, fc1);
+	//cout<<"fc1"<<endl;
 	Fully_Connected_Layer_2(fc1, Wfc2, Bfc2, output);
+	//cout<<"fc2"<<endl;
 /*
 
 	debug(Wconv1, CONV_1_TYPE*CONV_1_SIZE, "WConv1");
@@ -465,13 +475,14 @@ void LeNet(ap_axis<32,1,1,1>src[BUFFER_SIZE], ap_axis<32,1,1,1>dst[CLASSES], int
 	if(init)	init=0;
 
 	for(int i=0; i<CLASSES; i++){
-		dst[i].data = int(output[i]*1000000);//((int*)output)[i];
-		//cout<<dst[i].data<<endl;
+//#pragma HLS pipeline
+		dst[i].data = ((float)output[i])*DATA_CONVERT_MUL;//((int*)output)[i];
+		//cout<<output[i]<<' '<<((float)output[i])<<' '<<((float)output[i])*DATA_CONVERT_MUL<<endl;
 		dst[i].keep = 1;
 		dst[i].strb = 1;
 		dst[i].user = 1;
 		dst[i].last = 0;
 		dst[i].id = 0;
 		dst[i].dest = 1;
-	}
+	}//cout << endl;
 }

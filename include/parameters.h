@@ -1,14 +1,21 @@
 #ifndef __PARAMETERS_H__
 #define __PARAMETERS_H__
-#include<stdio.h>
-#include<stdlib.h>
-#include<time.h>
-#include<math.h>
-#include<float.h>
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+#include <float.h>
+#include "ap_fixed.h"
 // Environment Option
 #define HW_TEST		// HW version
 
+// HW data type option
+#define HW_DATA_WIDTH 7
+#define HW_DATA_INTEGER 3
+#define HW_DATA_DECIMAL HW_DATA_WIDTH-HW_DATA_INTEGER
+#define DATA_CONVERT_MUL (1<<(HW_DATA_DECIMAL))
+
+typedef ap_fixed<HW_DATA_WIDTH, HW_DATA_INTEGER, AP_RND_ZERO, AP_SAT> hw_fixed;
 
 /////////////////////// Layer config ///////////////////
 #define image_Move 10000

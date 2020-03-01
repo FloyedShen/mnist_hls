@@ -9,6 +9,7 @@
 #include "fstream"
 #include "cstring"
 #include "ap_fixed.h"
+#include "parameters.h"
 //#include "opencv/cv.h"
 #include "MNIST_DATA.h"
 using namespace std;
@@ -52,7 +53,7 @@ const int size[]={
 float MNIST_IMG[image_Move*MNIST_PAD_SIZE];
 int MNIST_LABEL[image_Move];
 
-void load_weight(string filename, ap_axis<32,1,1,1> *src, ap_axis<32,1,1,1>*dst,
+void load_weight(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis<HW_DATA_WIDTH,1,1,1>*dst,
 		int length, int id){
 
 	ifstream file(filename.c_str(), ios::in);
@@ -63,7 +64,8 @@ void load_weight(string filename, ap_axis<32,1,1,1> *src, ap_axis<32,1,1,1>*dst,
 			float tmp;
 			file >> tmp;
 			//float *ptr = &tmp;
-			src[i].data = int(tmp*1000000);
+			src[i].data = (ap_int<HW_DATA_WIDTH>)(tmp*DATA_CONVERT_MUL);
+					//(ap_int<HW_DATA_WIDTH>)(((ap_fixed<HW_DATA_WIDTH,HW_DATA_WIDTH>)tmp)*DATA_CONVERT_MUL);
 			src[i].keep = 1;
 			src[i].strb = 1;
 			src[i].user = 1;
@@ -80,7 +82,7 @@ void load_weight(string filename, ap_axis<32,1,1,1> *src, ap_axis<32,1,1,1>*dst,
 	LeNet(src, dst, id);
 }
 
-void load_weight_spc(string filename, ap_axis<32,1,1,1> *src, ap_axis<32,1,1,1> *dst,
+void load_weight_spc(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis<HW_DATA_WIDTH,1,1,1> *dst,
 		int length, int times, int id_begin){
 	float data[length*times];
 
@@ -98,7 +100,8 @@ void load_weight_spc(string filename, ap_axis<32,1,1,1> *src, ap_axis<32,1,1,1> 
 
 	for(int t=0; t<times; t++){
 		for(int i=0; i<length; i++){
-			src[i].data = (data[t*length+i]*1000000);//((int*)data)[t*length + i];
+			src[i].data = (ap_int<HW_DATA_WIDTH>)(data[t*length+i]*DATA_CONVERT_MUL);
+					//(ap_int<HW_DATA_WIDTH>)(((ap_fixed<HW_DATA_WIDTH,HW_DATA_WIDTH>)data[t*length+i])*DATA_CONVERT_MUL);//((int*)data)[t*length + i];
 			//cout <<src[i].data <<endl;
 			src[i].keep = 1;
 			src[i].strb = 1;
@@ -114,7 +117,7 @@ void load_weight_spc(string filename, ap_axis<32,1,1,1> *src, ap_axis<32,1,1,1> 
 }
 int main(int argc, char* argv[]){
 	printf("hello world\r\n");
-	ap_axis<32,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
+	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
 	float result[CLASSES];
 
 	load_weight(fname[0], src, dst, size[0], 1);
@@ -144,8 +147,9 @@ int main(int argc, char* argv[]){
 		//cout <<"IMAGE ID: "<<i <<endl;
 		char tmp;
 		for(int batch=0; batch<image_Batch*INPUT_WH*INPUT_WH; batch++){
-			//cout << MNIST_IMG[i*MNIST_PAD_SIZE + batch] <<' ';
-			src[batch].data = int(MNIST_IMG[i*MNIST_PAD_SIZE + batch]*1000000);//((int*)MNIST_IMG)[i*MNIST_PAD_SIZE + batch];
+			src[batch].data = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + batch]*DATA_CONVERT_MUL);
+			//((int*)MNIST_IMG)[i*MNIST_PAD_SIZE + batch];
+			//cout <<src[batch].data <<' ';
 			src[i].keep = 1;
 			src[i].strb = 1;
 			src[i].user = 1;
@@ -157,14 +161,14 @@ int main(int argc, char* argv[]){
 			//float res = *(float*)float_ptr;
 			//printf("%x %d %lf %lf\r\n", src[batch].data, src[batch].data, src[batch].data, *float_ptr);
 			//cout <<MNIST_IMG[i*MNIST_PAD_SIZE + batch]<<' ' << res <<endl;
-		}cout << endl;
+		}//cout << endl;
 		LeNet(src, dst, 0);
 		for(int index=0; index<10; index++){
 			int tmp = dst[index].data;
-			result[index] = tmp*1.0 / 1000000;//*(float*)(&tmp);
+			result[index] = (float)tmp/DATA_CONVERT_MUL;//*(float*)(&tmp);
 			cout <<result[index]<<' ';
 		}
 		cout << endl;
-		cout << MNIST_LABEL[i] << endl;
+		cout << MNIST_LABEL[i] << endl << endl;
 	}
 }

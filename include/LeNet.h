@@ -20,6 +20,6 @@
 #include "fullyconnected.h"
 #include "pooling.h"
 
-void LeNet(ap_axis<32,1,1,1>src[BUFFER_SIZE], ap_axis<32,1,1,1>dst[CLASSES], int id);
+void LeNet(ap_axis<HW_DATA_WIDTH,1,1,1>src[BUFFER_SIZE], ap_axis<HW_DATA_WIDTH,1,1,1>dst[CLASSES], int id);
 
 #endif

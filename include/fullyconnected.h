@@ -10,8 +10,8 @@
 
 #include "parameters.h"
 
-void Fully_Connected_Layer_1(float* input_feature, float* weights, float* bias, float* output_feature);
-void Fully_Connected_Layer_2(float* input_feature, float* weights, float* bias, float* output_feature);
+void Fully_Connected_Layer_1(hw_fixed* input_feature, hw_fixed* weights, hw_fixed* bias, hw_fixed* output_feature);
+void Fully_Connected_Layer_2(hw_fixed* input_feature, hw_fixed* weights, hw_fixed* bias, hw_fixed* output_feature);
 
 
 #endif
