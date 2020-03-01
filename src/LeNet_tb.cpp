@@ -101,8 +101,6 @@ void load_weight_spc(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis
 	for(int t=0; t<times; t++){
 		for(int i=0; i<length; i++){
 			src[i].data = (ap_int<HW_DATA_WIDTH>)(data[t*length+i]*DATA_CONVERT_MUL);
-					//(ap_int<HW_DATA_WIDTH>)(((ap_fixed<HW_DATA_WIDTH,HW_DATA_WIDTH>)data[t*length+i])*DATA_CONVERT_MUL);//((int*)data)[t*length + i];
-			//cout <<src[i].data <<endl;
 			src[i].keep = 1;
 			src[i].strb = 1;
 			src[i].user = 1;
@@ -120,55 +118,42 @@ int main(int argc, char* argv[]){
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
 	float result[CLASSES];
 
-	load_weight(fname[0], src, dst, size[0], 1);
-	load_weight(fname[1], src, dst, size[1], 2);
-	load_weight_spc(fname[2], src, dst, size[2], 3, 3);
-	load_weight(fname[3], src, dst, size[3], 6);
-	load_weight_spc(fname[4], src, dst, size[4], 50, 7);
-	load_weight(fname[5], src, dst, size[5], 57);
-	load_weight(fname[6], src, dst, size[6], 58);
-	load_weight(fname[7], src, dst, size[7], 59);
-	load_weight(fname[8], src, dst, size[8], 60);
-	load_weight(fname[9], src, dst, size[9], 61);
-	load_weight_spc(fname[10], src, dst, size[10], 21, 62);
-	load_weight(fname[11], src, dst, size[11], 83);
-	load_weight(fname[12], src, dst, size[12], 84);
-	load_weight(fname[13], src, dst, size[13], 85);
-
 	READ_MNIST_DATA("/home/parallels/Documents/LeNet/Vivado_hls/MNIST_DATA/t10k-images.idx3-ubyte",
 			MNIST_IMG,-1.0f, 1.0f, image_Move);
 	READ_MNIST_LABEL("/home/parallels/Documents/LeNet/Vivado_hls/MNIST_DATA/t10k-labels.idx1-ubyte",
 			MNIST_LABEL,image_Move,false);
 
-	int test_num = image_Move / image_Batch;
 
-	//int *MNIST_IMG_INT = (int*)MNIST_IMG;
+	int test_num = image_Move / image_Batch;
+	int correct = 0;
+
 	for(int i=0; i<test_num; i++){
-		//cout <<"IMAGE ID: "<<i <<endl;
 		char tmp;
 		for(int batch=0; batch<image_Batch*INPUT_WH*INPUT_WH; batch++){
 			src[batch].data = (ap_int<HW_DATA_WIDTH>)(MNIST_IMG[i*MNIST_PAD_SIZE + batch]*DATA_CONVERT_MUL);
-			//((int*)MNIST_IMG)[i*MNIST_PAD_SIZE + batch];
-			//cout <<src[batch].data <<' ';
 			src[i].keep = 1;
 			src[i].strb = 1;
 			src[i].user = 1;
 			src[i].last = 0;
 			src[i].id = 0;
 			src[i].dest = 1;
-			//cout << src[batch].data <<endl;
-			//ap_int<32> *float_ptr = &src[batch].data;
-			//float res = *(float*)float_ptr;
-			//printf("%x %d %lf %lf\r\n", src[batch].data, src[batch].data, src[batch].data, *float_ptr);
-			//cout <<MNIST_IMG[i*MNIST_PAD_SIZE + batch]<<' ' << res <<endl;
-		}//cout << endl;
+		}
 		LeNet(src, dst, 0);
+		float max_num = -10000;
+		int max_id = 0;
 		for(int index=0; index<10; index++){
 			int tmp = dst[index].data;
-			result[index] = (float)tmp/DATA_CONVERT_MUL;//*(float*)(&tmp);
+			result[index] = (float)tmp/DATA_CONVERT_MUL;
+			if(result[index] > max_num){
+				max_num = result[index];
+				max_id = index;
+			}
 			cout <<result[index]<<' ';
 		}
 		cout << endl;
+		if(MNIST_LABEL[i] == max_id)
+			correct ++;
 		cout << MNIST_LABEL[i] << endl << endl;
+		cout << "Rate: " << (float)correct/(i+1) << endl;
 	}
 }

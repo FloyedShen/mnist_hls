@@ -12,22 +12,23 @@
 #include "ap_int.h"
 #define CONV_2_SIZE 25
 
-void Convolution_Layer_1(const hw_fixed input_feature[image_Batch*CONV_1_INPUT_WH*CONV_1_INPUT_WH],
-		const hw_fixed weights[6*5*5],
-		const hw_fixed bias[6],
-		hw_fixed output_feature[image_Batch*6*CONV_1_OUTPUT_WH*CONV_1_OUTPUT_WH], int init
+void Convolution_Layer_1(const hw_fixed IBRAM[image_Batch][CONV_1_INPUT_WH][CONV_1_INPUT_WH],
+		const hw_fixed WBRAM[CONV_1_TYPE][CONV_1_WH][CONV_1_WH],
+		const hw_fixed biasBRAM[CONV_1_TYPE],
+		hw_fixed OBRAM[image_Batch][CONV_1_TYPE][CONV_1_OUTPUT_WH][CONV_1_OUTPUT_WH]
 		);
 
-void Convolution_Layer_2(const hw_fixed input_feature[image_Batch*6*14*14],
-		const hw_fixed weights[6*16*5*5],
-		const hw_fixed bias[CONV_2_TYPE],
-		hw_fixed output_feature[image_Batch*16*10*10], int init
+void Convolution_Layer_2(const hw_fixed IBRAM[image_Batch][CONV_1_TYPE][CONV_2_INPUT_WH][CONV_2_INPUT_WH],
+		const hw_fixed  WBRAM[CONV_2_TYPE][CONV_1_TYPE][CONV_2_WH][CONV_2_WH],
+		const hw_fixed biasBRAM[CONV_2_TYPE],
+		hw_fixed OBRAM[image_Batch][CONV_2_TYPE][CONV_2_OUTPUT_WH][CONV_2_OUTPUT_WH]
 		);
 
-void Convolution_Layer_3(const hw_fixed input_feature[image_Batch*16*5*5],
-		const hw_fixed weights[16*120*5*5],
-		const hw_fixed bias[120],
-		hw_fixed output_feature[image_Batch*120], int init
+void Convolution_Layer_3(const hw_fixed IBRAM[image_Batch][CONV_2_TYPE][CONV_3_INPUT_WH][CONV_3_INPUT_WH],
+		const hw_fixed WBRAM[CONV_3_TYPE][CONV_2_TYPE][CONV_3_WH][CONV_3_WH],
+		const hw_fixed biasBRAM[CONV_3_TYPE],
+		hw_fixed OBRAM[image_Batch][CONV_3_TYPE]
 		);
+
 
 #endif

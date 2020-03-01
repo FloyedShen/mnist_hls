@@ -10,7 +10,7 @@
 #define HW_TEST		// HW version
 
 // HW data type option
-#define HW_DATA_WIDTH 7
+#define HW_DATA_WIDTH 8
 #define HW_DATA_INTEGER 3
 #define HW_DATA_DECIMAL HW_DATA_WIDTH-HW_DATA_INTEGER
 #define DATA_CONVERT_MUL (1<<(HW_DATA_DECIMAL))
