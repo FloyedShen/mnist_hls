@@ -9,6 +9,7 @@
 #define __FULLY_CONNECTED_H__
 
 #include "parameters.h"
+#include "activation.h"
 
 void Fully_Connected_Layer_1(hw_fixed input_feature[image_Batch][CONV_3_TYPE],
 		const hw_fixed* weights,

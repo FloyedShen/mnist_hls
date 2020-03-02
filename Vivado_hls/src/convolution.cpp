@@ -23,7 +23,6 @@ void Convolution_Layer_1(const hw_fixed IBRAM[image_Batch][CONV_1_INPUT_WH][CONV
 				for (int row = 0; row < CONV_1_OUTPUT_WH; row++) {
 					COL:
 					for (int col = 0; col < CONV_1_OUTPUT_WH; col++) {
-#pragma HLS pipeline
 						D_OUT:
 						for(int co=0;co<CONV_1_TYPE;co++){
 							if(!row_k&&!col_k)
@@ -38,11 +37,14 @@ void Convolution_Layer_1(const hw_fixed IBRAM[image_Batch][CONV_1_INPUT_WH][CONV
 			}
 		}
 	}
-
+	biasBatch:
 	for(int batch=0; batch<image_Batch; batch++){
-		for(int depth=0; depth<CONV_1_TYPE; depth++){
-			for(int row=0; row<CONV_1_OUTPUT_WH; row++){
-				for(int col=0; col<CONV_1_OUTPUT_WH; col++){
+		biasRow:
+		for(int row=0; row<CONV_1_OUTPUT_WH; row++){
+			biasCol:
+			for(int col=0; col<CONV_1_OUTPUT_WH; col++){
+				biasDepthIn:
+				for(int depth=0; depth<CONV_1_TYPE; depth++){
 					OBRAM[batch][depth][row][col] = _tanh(OBRAM[batch][depth][row][col] + biasBRAM[depth]);
 				}
 			}
@@ -67,7 +69,6 @@ void Convolution_Layer_2(const hw_fixed IBRAM[image_Batch][CONV_1_TYPE][CONV_2_I
 					COL	 :
 					for (int col = 0; col < CONV_2_OUTPUT_WH; col++) {
 						DEPTH_OUT:
-//#pragma HLS pipeline
 						for(int depth_out = 0; depth_out < CONV_2_TYPE; depth_out++){
 							DEPTH_IN:
 							for (int depth_in = 0; depth_in < CONV_1_TYPE; depth_in++) {
@@ -90,11 +91,14 @@ void Convolution_Layer_2(const hw_fixed IBRAM[image_Batch][CONV_1_TYPE][CONV_2_I
 			}
 		}
 	}
-
+	biasBatch:
 	for(int batch=0; batch<image_Batch; batch++){
-		for(int depth=0; depth<CONV_2_TYPE; depth++){
-			for(int row=0; row<CONV_2_OUTPUT_WH; row++){
-				for(int col=0; col<CONV_2_OUTPUT_WH; col++){
+		biasROW:
+		for(int row=0; row<CONV_2_OUTPUT_WH; row++){
+			biasCOL:
+			for(int col=0; col<CONV_2_OUTPUT_WH; col++){
+				biasDEPTH:
+				for(int depth=0; depth<CONV_2_TYPE; depth++){
 					OBRAM[batch][depth][row][col] = _tanh(OBRAM[batch][depth][row][col] + biasBRAM[depth]);
 				}
 			}
@@ -119,7 +123,6 @@ void Convolution_Layer_3(const hw_fixed IBRAM[image_Batch][CONV_2_TYPE][CONV_3_I
 				D_OUT:
 				for(int co=0;co<CONV_3_TYPE;co++){
 					D_IN:
-//#pragma HLS pipeline
 					for(int ci=0;ci<CONV_2_TYPE;ci++){
 						if(!row_k&&!col_k){
 							OBRAM[batch][co]
@@ -134,11 +137,12 @@ void Convolution_Layer_3(const hw_fixed IBRAM[image_Batch][CONV_2_TYPE][CONV_3_I
 			}
 		}
 	}
-
+	biasBatch:
 	for(int i=0;i<image_Batch;i++){
-		for(int j=0;j<CONV_3_TYPE;j++)
-//#pragma HLS pipeline
+		biasDepth:
+		for(int j=0;j<CONV_3_TYPE;j++){
 			OBRAM[i][j] = _tanh(OBRAM[i][j]+biasBRAM[j]);
+		}
 	}
 }
 
