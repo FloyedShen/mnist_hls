@@ -10,12 +10,12 @@
 #include "cstring"
 #include "ap_fixed.h"
 #include "parameters.h"
-//#include "opencv/cv.h"
 #include "MNIST_DATA.h"
+//#include "opencv/cv.h"
 using namespace std;
 //using namespace cv;
 //#define float ap_fixed<32,2>
-
+/*
 const string fname[] = {
 		"/home/parallels/Documents/LeNet/Vivado_hls/filter/Wconv1.mdl",
 		"/home/parallels/Documents/LeNet/Vivado_hls/filter/bconv1.mdl",
@@ -49,9 +49,6 @@ const int size[]={
 		FILTER_NN_2_SIZE,
 		BIAS_NN_2_SIZE
 };
-
-float MNIST_IMG[image_Move*MNIST_PAD_SIZE];
-int MNIST_LABEL[image_Move];
 
 void load_weight(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis<HW_DATA_WIDTH,1,1,1>*dst,
 		int length, int id){
@@ -113,6 +110,12 @@ void load_weight_spc(string filename, ap_axis<HW_DATA_WIDTH,1,1,1> *src, ap_axis
 		LeNet(src, dst, id_begin+t);
 	}
 }
+*/
+
+float MNIST_IMG[image_Move*MNIST_PAD_SIZE];
+int MNIST_LABEL[image_Move];
+
+
 int main(int argc, char* argv[]){
 	printf("hello world\r\n");
 	ap_axis<HW_DATA_WIDTH,1,1,1> src[BUFFER_SIZE], dst[CLASSES];
@@ -122,6 +125,17 @@ int main(int argc, char* argv[]){
 			MNIST_IMG,-1.0f, 1.0f, image_Move);
 	READ_MNIST_LABEL("/home/parallels/Documents/LeNet/Vivado_hls/MNIST_DATA/t10k-labels.idx1-ubyte",
 			MNIST_LABEL,image_Move,false);
+
+/*
+	for(int k=0; k<100; k++){
+		for(int i=0; i<INPUT_WH; i++){
+			for(int j=0; j<INPUT_WH; j++){
+				cout << MNIST_IMG[k*INPUT_WH*INPUT_WH + i*INPUT_WH + j] << ',';
+			}
+		}
+		cout << endl;
+	}
+	*/
 
 
 	int test_num = image_Move / image_Batch;
@@ -137,6 +151,7 @@ int main(int argc, char* argv[]){
 			src[i].last = 0;
 			src[i].id = 0;
 			src[i].dest = 1;
+			//printf("%x ", src[batch].data & 0xFF);
 		}
 		LeNet(src, dst, 0);
 		float max_num = -10000;
@@ -148,7 +163,7 @@ int main(int argc, char* argv[]){
 				max_num = result[index];
 				max_id = index;
 			}
-			cout <<result[index]<<' ';
+			printf("%x ", tmp & 0xFF);
 		}
 		cout << endl;
 		if(MNIST_LABEL[i] == max_id)

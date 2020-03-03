@@ -1,8 +1,10 @@
 /***************************** Include Files *********************************/
+#include "time.h"
+#include "xtime_l.h"
 #include "xaxidma.h"
 #include "xparameters.h"
 #include "xdebug.h"
-#include "xfifo.h"
+#include "xlenet.h"
 
 #if defined(XPAR_UARTNS550_0_BASEADDR)
 #include "xuartns550_l.h"       /* to use uartns550 */
@@ -34,14 +36,15 @@
 #define MEM_BASE_ADDR		(DDR_BASE_ADDR + 0x1000000)
 #endif
 
-#define TX_BUFFER_BASE		(MEM_BASE_ADDR + 0x00100000)
-#define RX_BUFFER_BASE		(MEM_BASE_ADDR + 0x00300000)
+#define TX_BUFFER_BASE		(MEM_BASE_ADDR + 0x00000000)
+#define RX_BUFFER_BASE		(MEM_BASE_ADDR + 0x03000000)
 #define RX_BUFFER_HIGH		(MEM_BASE_ADDR + 0x004FFFFF)
 
-#define MAX_PKT_LEN		1024
+#define MAX_SEN_LEN		1024
+#define MAX_REC_LEN 	10
 
 
-#define NUMBER_OF_TRANSFERS	10
+#define NUMBER_OF_TRANSFERS	100
 
 /**************************** Type Definitions *******************************/
 
@@ -63,10 +66,15 @@ static int CheckData(void);
  * Device instance definitions
  */
 XAxiDma AxiDma;
-XFifo xfifo;
-int *TxBufferPtr;
-int *RxBufferPtr;
+XLenet xlenet;
+int8_t *TxBufferPtr;
+int8_t *RxBufferPtr;
 
+#define IMAGE_SIZE 1024
+#define DATA_CONVERT_MUL (1<<(5))
+float MNIST_DATA[] = {
+		#include "test_data.h"
+};
 
 /*****************************************************************************/
 /**
@@ -89,7 +97,7 @@ int main()
 	xil_printf("\r\n--- Entering main() --- \r\n");
 
 	//init HLS IP
-	int _status = XFifo_Initialize(&xfifo,XPAR_FIFO_0_DEVICE_ID);
+	int _status = XLenet_Initialize(&xlenet,XPAR_LENET_0_DEVICE_ID);
 	if(_status != XST_SUCCESS)
 	{
 		xil_printf("XExample_initialize failed\n");
@@ -97,11 +105,11 @@ int main()
 	}
 
 	//start HLS IP
-	//XFifo_EnableAutoRestart(&xfifo);
-	XFifo_Start(&xfifo);
+	//XFifo_EnableAutoRestart(&xlenet);
+	XLenet_Start(&xlenet);
 
-	XFifo_Set_inc_V(&xfifo, 666);
-	int origin = XFifo_Get_inc_V(&xfifo);
+	XLenet_Set_id(&xlenet, 0);
+	int origin = XLenet_Get_id(&xlenet);
 	xil_printf("Origin INC value: %d\r\n", origin);
 	/* Run the poll example for simple transfer */
 	Status = XAxiDma_SimplePollExample(DMA_DEV_ID);
@@ -167,8 +175,8 @@ int XAxiDma_SimplePollExample(u16 DeviceId)
 	int Status;
 	int Index;
 
-	TxBufferPtr = (int *)TX_BUFFER_BASE ;
-	RxBufferPtr = (int *)RX_BUFFER_BASE;
+	TxBufferPtr = (int8_t *)TX_BUFFER_BASE;
+	RxBufferPtr = (int8_t *)RX_BUFFER_BASE;
 
 	/* Initialize the XAxiDma device.
 	 */
@@ -199,44 +207,67 @@ int XAxiDma_SimplePollExample(u16 DeviceId)
 	//disable the cache
     Xil_DCacheDisable();
 
-	for(Index = 0; Index < NUMBER_OF_TRANSFERS; Index ++) {
-		while(XFifo_IsDone(&xfifo)){
-			xil_printf("FIFO is busy\r\n");
+
+    for(Index = 0; Index < NUMBER_OF_TRANSFERS; Index ++){
+		for(int i=0; i<IMAGE_SIZE; i++){
+			TxBufferPtr[Index*IMAGE_SIZE + i] = (int8_t)(MNIST_DATA[Index*IMAGE_SIZE + i] * DATA_CONVERT_MUL);
 		}
-		XFifo_Start(&xfifo);
-		//write to the TxBuffer and RxBuffer default value
-		for(int i = 0; i < MAX_PKT_LEN; i++)
-		{
-				TxBufferPtr[i] = i + Index;
-				RxBufferPtr[i] = 0;
-		}
-
-		Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) RxBufferPtr,
-					MAX_PKT_LEN*sizeof(int), XAXIDMA_DEVICE_TO_DMA);
-
-		if (Status != XST_SUCCESS) {
-			return XST_FAILURE;
-		}
-
-		Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) TxBufferPtr,
-					MAX_PKT_LEN*sizeof(int), XAXIDMA_DMA_TO_DEVICE);
-
-		if (Status != XST_SUCCESS) {
-			return XST_FAILURE;
-		}
-
-		while ((XAxiDma_Busy(&AxiDma,XAXIDMA_DEVICE_TO_DMA)) ||
-			(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE))) {
-				/* Wait */
-		}
-
-		Status = CheckData();
-		if (Status != XST_SUCCESS) {
-			return XST_FAILURE;
-		}
-
 	}
 
+    XTime start;
+    XTime_GetTime(&start);
+    xil_printf("test begin: %x\r\n", start);
+    usleep(10000000);
+
+    XTime tmp_time;
+    XTime_GetTime(&tmp_time);
+    XTime_GetTime(&tmp_time);
+    xil_printf("test end: %x \r\n", tmp_time);
+	for(int k=0; k<100; k++){
+		for(Index = 0; Index < NUMBER_OF_TRANSFERS; Index ++) {
+
+			while(XLenet_IsDone(&xlenet)){
+				//xil_printf("FIFO is busy\r\n");
+			}
+			XLenet_Start(&xlenet);
+			//write to the TxBuffer and RxBuffer default value
+
+
+			for(int i = 0; i < MAX_REC_LEN; i++){
+					RxBufferPtr[i] = 0;
+			}
+
+			Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) RxBufferPtr,
+					MAX_REC_LEN*sizeof(int8_t), XAXIDMA_DEVICE_TO_DMA);
+
+			if (Status != XST_SUCCESS) {
+				return XST_FAILURE;
+			}
+
+			Status = XAxiDma_SimpleTransfer(&AxiDma,(UINTPTR) TxBufferPtr + Index*IMAGE_SIZE,
+					MAX_SEN_LEN*sizeof(int8_t), XAXIDMA_DMA_TO_DEVICE);
+
+			if (Status != XST_SUCCESS) {
+				return XST_FAILURE;
+			}
+
+			while ((XAxiDma_Busy(&AxiDma,XAXIDMA_DEVICE_TO_DMA)) ||
+				(XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE))) {
+					//printf("RX: %d, TX:%d", (XAxiDma_Busy(&AxiDma,XAXIDMA_DEVICE_TO_DMA)), (XAxiDma_Busy(&AxiDma,XAXIDMA_DMA_TO_DEVICE)));
+					/* Wait */
+			}
+
+			//Status = CheckData();
+			//if (Status != XST_SUCCESS) {
+			//	return XST_FAILURE;
+			//}
+		}
+		XTime tmp;
+		XTime_GetTime(&tmp);
+		XTime output = ((tmp-start)*1000000)/(COUNTS_PER_SECOND);
+		xil_printf("%TIME: %x  ", (output));
+		xil_printf(" %x\r\n", tmp);
+	}
 	/* Test finishes successfully
 	 */
 	return XST_SUCCESS;
@@ -258,17 +289,19 @@ int XAxiDma_SimplePollExample(u16 DeviceId)
 ******************************************************************************/
 static int CheckData(void)
 {
+	/*
 	xil_printf("\nThe TxData is\n");
-	for(int _index=0;_index < MAX_PKT_LEN;_index++)
+	for(int _index=0;_index < MAX_SEN_LEN;_index++)
 	{
-		xil_printf("%d ",TxBufferPtr[_index]);
+		xil_printf("%x ",TxBufferPtr[_index]);
 	}
-	xil_printf("\nThe RxData is\n");
-	for(int _index=0;_index < MAX_PKT_LEN;_index++)
+	*/
+	//xil_printf("\nThe RxData is\n");
+	for(int _index=0;_index < MAX_REC_LEN;_index++)
 	{
 		xil_printf("%d ",RxBufferPtr[_index]);
 	}
-	xil_printf("\n\n");
+	xil_printf("\r\n");
 
 	return XST_SUCCESS;
 }
