@@ -2,7 +2,7 @@
  Lenet for MNIST handwritten digit recognition using Vivado hls tool.
 * Accuracy : 97.5938% (8-bit Mode).
 * Speed : 71.43 FPS (100MHz, Zedboard)
-* The complete project is provided, please download it from [Baidu net disk](https://pan.baidu.com/s/1KLYjrqyNqzrSm6gDwwAlqw), key:3u7f
+* The complete project is provided, please download it from [Baidu net disk](https://pan.baidu.com/s/1iFz2Ycfx7YNL-umbLTFpLg), key:1bv4
 ## requirement
 * Vivado hls 2019.2
 * petalinux 2019.2 (optional)
